@@ -283,7 +283,7 @@ function openCompanyForm(companyId = null) {
     document.getElementById('companyForm').reset();
     document.getElementById('companyFormId').value = companyId || '';
     if (companyId) {
-        const companies = getCompanies();
+        const companies = getCompaniesSync();
         const company = companies.find(c => c.id === companyId);
         if (company) {
             document.getElementById('companyFormName').value = company.name;
@@ -314,7 +314,8 @@ function populateCompaniesSelect() {
         { code: 'loja-02', name: 'Loja 02' },
         { code: 'loja-03', name: 'Loja 03' }
     ];
-    const companies = getCompanies();
+    const companies = getCompaniesSync();
+    console.log('🏢 Empresas para select:', companies);
     const merged = [...baseOptions, ...companies.map(c => ({ code: c.code, name: c.name }))];
     const current = select.value;
     select.innerHTML = merged.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
