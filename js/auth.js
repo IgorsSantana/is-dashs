@@ -72,10 +72,35 @@ function validateLogin(username, password) {
     return { success: true, user: user };
 }
 
-// Função para obter usuários
-function getUsers() {
-    // Usar localStorage por enquanto
-    // Firebase pode ser adicionado depois com cache sincronizado
+// Função para obter usuários (lê do Firebase e atualiza cache)
+async function getUsers() {
+    let users = [];
+    
+    // Tentar buscar do Firebase
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const snapshot = await db.collection('users').get();
+            if (!snapshot.empty) {
+                users = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                // Atualizar cache local
+                localStorage.setItem('users', JSON.stringify(users));
+                console.log('✅ Usuários carregados do Firebase:', users.length);
+            }
+        } catch (e) {
+            console.log('⚠️ Firebase não disponível, usando cache local:', e.message);
+        }
+    }
+    
+    // Se Firebase não retornou dados, usar cache local
+    if (users.length === 0) {
+        users = JSON.parse(localStorage.getItem('users') || '[]');
+    }
+    
+    return users;
+}
+
+// Função auxiliar síncrona para compatibilidade (retorna cache local)
+function getUsersSync() {
     return JSON.parse(localStorage.getItem('users') || '[]');
 }
 
@@ -103,7 +128,7 @@ async function syncUsersToFirebase(users) {
 
 // Função para adicionar/editar usuário
 function saveUser(user) {
-    const users = getUsers();
+    const users = getUsersSync();
     
     if (!user.id) {
         user.id = 'user_' + Date.now();
@@ -150,8 +175,35 @@ function deleteUser(userId) {
     }
 }
 
-// Função para obter empresas
-function getCompanies() {
+// Função para obter empresas (lê do Firebase primeiro)
+async function getCompanies() {
+    let companies = [];
+    
+    // Tentar buscar do Firebase
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const snapshot = await db.collection('companies').get();
+            if (!snapshot.empty) {
+                companies = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                // Atualizar cache local
+                localStorage.setItem('companies', JSON.stringify(companies));
+                console.log('✅ Empresas carregadas do Firebase:', companies.length);
+            }
+        } catch (e) {
+            console.log('⚠️ Firebase não disponível, usando cache local:', e.message);
+        }
+    }
+    
+    // Se Firebase não retornou dados, usar cache local
+    if (companies.length === 0) {
+        companies = JSON.parse(localStorage.getItem('companies') || '[]');
+    }
+    
+    return companies;
+}
+
+// Função auxiliar síncrona
+function getCompaniesSync() {
     return JSON.parse(localStorage.getItem('companies') || '[]');
 }
 
@@ -176,7 +228,7 @@ function saveCompanies(companies) {
 
 // Função para adicionar/editar empresa
 function saveCompany(company) {
-    const companies = getCompanies();
+    const companies = getCompaniesSync();
     
     if (company.id) {
         // Editar empresa existente
@@ -205,7 +257,7 @@ function saveCompany(company) {
 
 // Função para excluir empresa
 function deleteCompany(companyId) {
-    const companies = getCompanies();
+    const companies = getCompaniesSync();
     const filteredCompanies = companies.filter(c => c.id !== companyId);
     saveCompanies(filteredCompanies);
     
@@ -277,14 +329,48 @@ function importData(file) {
     reader.readAsText(file);
 }
 
-// Função para obter relatórios
-function getReports() {
+// Função para obter relatórios (lê do Firebase primeiro)
+async function getReports() {
+    let reports = null;
+    
+    // Tentar buscar do Firebase
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const snapshot = await db.collection('reports').get();
+            if (!snapshot.empty) {
+                reports = {};
+                snapshot.docs.forEach(doc => {
+                    reports[doc.id] = doc.data();
+                });
+                // Atualizar cache local
+                localStorage.setItem('reports', JSON.stringify(reports));
+                console.log('✅ Relatórios carregados do Firebase:', Object.keys(reports).length);
+            }
+        } catch (e) {
+            console.log('⚠️ Firebase não disponível, usando cache local:', e.message);
+        }
+    }
+    
+    // Se Firebase não retornou dados, usar cache local
+    if (!reports) {
+        const reportsStr = localStorage.getItem('reports');
+        if (reportsStr) {
+            reports = JSON.parse(reportsStr);
+        } else {
+            // Retornar relatórios padrão do CONFIG
+            reports = CONFIG.REPORTS;
+        }
+    }
+    
+    return reports;
+}
+
+// Função auxiliar síncrona
+function getReportsSync() {
     const reports = localStorage.getItem('reports');
     if (reports) {
         return JSON.parse(reports);
     }
-    
-    // Retornar relatórios padrão do CONFIG
     return CONFIG.REPORTS;
 }
 
@@ -309,7 +395,7 @@ function saveReports(reports) {
 
 // Função para adicionar/editar relatório
 function saveReport(report) {
-    const reports = getReports();
+    const reports = getReportsSync();
     
     if (report.id) {
         // Editar relatório existente
@@ -346,7 +432,7 @@ function saveReport(report) {
 
 // Função para excluir relatório
 function deleteReport(reportId) {
-    const reports = getReports();
+    const reports = getReportsSync();
     delete reports[reportId];
     saveReports(reports);
     
