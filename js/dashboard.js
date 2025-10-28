@@ -7,13 +7,26 @@ let availableReports = [];
 window.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     
-    // Aguardar sync carregar dados, depois inicializar
-    setTimeout(() => {
+    console.log('📋 Dashboard: Aguardando carregamento do Firebase...');
+    
+    // Aguardar evento de carregamento do Firebase OU timeout de segurança
+    let initialized = false;
+    
+    const initDashboard = () => {
+        if (initialized) return;
+        initialized = true;
+        console.log('🚀 Inicializando dashboard...');
         loadSession();
         renderSidebar();
         setupEventListeners();
         setupAdminPanel();
-    }, 1500); // Aguardar Firebase carregar
+    };
+    
+    // Escutar evento de dados carregados
+    window.addEventListener('firebaseDataLoaded', initDashboard);
+    
+    // Timeout de segurança de 3 segundos
+    setTimeout(initDashboard, 3000);
 });
 
 // Verificar autenticação

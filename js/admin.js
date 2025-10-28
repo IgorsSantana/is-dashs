@@ -16,14 +16,27 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('companiesTab').style.display = 'inline-block';
     }
 
-    // Aguardar sync carregar dados do Firebase
-    setTimeout(() => {
+    console.log('📋 Admin: Aguardando carregamento do Firebase...');
+    
+    // Aguardar evento de carregamento do Firebase OU timeout de segurança
+    let initialized = false;
+    
+    const initAdmin = () => {
+        if (initialized) return;
+        initialized = true;
+        console.log('🚀 Inicializando admin...');
         setupTabs();
         setupActions();
         loadReportsList();
         loadUsersList();
         loadCompaniesList();
-    }, 1500);
+    };
+    
+    // Escutar evento de dados carregados
+    window.addEventListener('firebaseDataLoaded', initAdmin);
+    
+    // Timeout de segurança de 3 segundos
+    setTimeout(initAdmin, 3000);
 });
 
 function setupTabs() {
