@@ -3,7 +3,17 @@
 const loginForm = document.getElementById('loginForm');
 const errorMessage = document.getElementById('errorMessage');
 
-// Inicializar usuários padrão
+// Aguardar Firebase carregar antes de permitir login
+let firebaseLoaded = false;
+
+window.addEventListener('firebaseDataLoaded', () => {
+    console.log('✅ Firebase carregou, habilitando login');
+    firebaseLoaded = true;
+    // Inicializar usuários padrão após Firebase carregar
+    initializeDefaultUsers();
+});
+
+// Inicializar padrão localmente também (fallback)
 initializeDefaultUsers();
 
 loginForm.addEventListener('submit', (e) => {
@@ -11,6 +21,8 @@ loginForm.addEventListener('submit', (e) => {
     
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
+    
+    console.log('🔐 Tentando fazer login com:', username);
     
     // Validar campos
     if (!username || !password) {
@@ -25,6 +37,8 @@ loginForm.addEventListener('submit', (e) => {
         showError(result.message);
         return;
     }
+    
+    console.log('✅ Login bem-sucedido, redirecionando...');
     
     // Salvar sessão
     const session = {

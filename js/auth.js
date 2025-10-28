@@ -56,19 +56,25 @@ function initializeDefaultUsers() {
 
 // Função para validar login
 function validateLogin(username, password) {
+    console.log('🔐 Validando login para:', username);
     const users = JSON.parse(localStorage.getItem('users') || '[]');
+    console.log('👥 Usuários disponíveis:', users.length);
     const encryptedPassword = btoa(password);
     
     const user = users.find(u => u.username === username);
     
     if (!user) {
+        console.log('❌ Usuário não encontrado');
         return { success: false, message: 'Usuário não encontrado' };
     }
     
+    console.log('🔑 Senha correta?', user.password === encryptedPassword, user.password, 'vs', encryptedPassword);
     if (user.password !== encryptedPassword) {
+        console.log('❌ Senha incorreta');
         return { success: false, message: 'Senha incorreta' };
     }
     
+    console.log('✅ Login bem-sucedido para:', username);
     return { success: true, user: user };
 }
 
