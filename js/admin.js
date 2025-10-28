@@ -96,7 +96,9 @@ function formatDepartmentName(department) {
 
 // Relatórios
 function loadReportsList() {
-    const reports = getReports();
+    console.log('📋 Carregando lista de relatórios no admin');
+    const reports = getReportsSync();
+    console.log('✅ Relatórios carregados:', Object.keys(reports).length);
     const reportsList = document.getElementById('reportsList');
     reportsList.innerHTML = '';
     for (const [id, report] of Object.entries(reports)) {
@@ -199,7 +201,9 @@ function closeReportForm() { document.getElementById('reportFormModal').classLis
 
 // Usuários
 function loadUsersList() {
-    const users = getUsers();
+    console.log('👥 Carregando lista de usuários no admin');
+    const users = getUsersSync();
+    console.log('✅ Usuários carregados:', users.length);
     const usersList = document.getElementById('usersList');
     usersList.innerHTML = '';
     const showPasswords = localStorage.getItem('showPasswords') === 'true';
@@ -259,7 +263,9 @@ function closeUserForm() { document.getElementById('userFormModal').classList.re
 
 // Empresas
 function loadCompaniesList() {
-    const companies = getCompanies();
+    console.log('🏢 Carregando lista de empresas no admin');
+    const companies = getCompaniesSync();
+    console.log('✅ Empresas carregadas:', companies.length);
     const companiesList = document.getElementById('companiesList');
     if (!companiesList) return;
     companiesList.innerHTML = '';

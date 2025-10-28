@@ -63,8 +63,9 @@ function loadSession() {
             document.getElementById('adminPanelBtn').style.display = 'block';
         }
         
-        // Obter relatórios disponíveis
-        const reports = getReports();
+        // Obter relatórios disponíveis (síncrono, pois dados já estão em localStorage)
+        const reports = getReportsSync();
+        console.log('📊 Relatórios disponíveis:', reports);
         
         // Admin TI tem acesso a TODOS os relatórios
         if (currentSession.isAdminTI) {
@@ -78,14 +79,17 @@ function loadSession() {
                 reports
             );
         }
+        console.log('✅ Relatórios filtrados para o usuário:', availableReports.length);
     }
 }
 
 // Renderizar sidebar com relatórios
 function renderSidebar() {
+    console.log('🎨 Renderizando sidebar com', availableReports.length, 'relatórios');
     const reportList = document.getElementById('reportList');
     
     if (availableReports.length === 0) {
+        console.log('⚠️ Nenhum relatório disponível para este usuário');
         reportList.innerHTML = `
             <li class="report-item">
                 <span class="report-name">Nenhum relatório disponível</span>
@@ -637,13 +641,15 @@ function populateCompaniesSelect() {
 
 // Carregar relatório
 function loadReport(reportId) {
-    const reports = getReports();
+    console.log('📄 Carregando relatório:', reportId);
+    const reports = getReportsSync();
     const report = reports[reportId];
     
     if (!report) {
-        console.error('Relatório não encontrado:', reportId);
+        console.error('❌ Relatório não encontrado:', reportId);
         return;
     }
+    console.log('✅ Relatório encontrado:', report.name);
     
     // Atualizar título
     document.getElementById('selectedReportTitle').textContent = report.name;
