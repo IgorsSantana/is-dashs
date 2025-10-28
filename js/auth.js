@@ -72,28 +72,55 @@ function validateLogin(username, password) {
     return { success: true, user: user };
 }
 
-// Função para obter usuários
-function getUsers() {
+// Função para obter usuários (com fallback para localStorage)
+async function getUsers() {
+    // Tentar Firebase primeiro
+    if (typeof db !== 'undefined') {
+        try {
+            const snapshot = await db.collection('users').get();
+            return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        } catch (e) {
+            console.log('Firebase não disponível, usando localStorage');
+        }
+    }
+    
+    // Fallback para localStorage
     return JSON.parse(localStorage.getItem('users') || '[]');
 }
 
-// Função para adicionar/editar usuário
-function saveUser(user) {
-    const users = getUsers();
-    
-    if (user.id) {
-        // Editar usuário existente
-        const index = users.findIndex(u => u.id === user.id);
-        if (index !== -1) {
-            const existingUser = users[index];
-            // Preservar senha original se não foi alterada
-            const password = user.password && user.password !== '***PRESERVED***' ? btoa(user.password) : existingUser.password;
-            users[index] = { ...existingUser, ...user, password };
-        }
-    } else {
-        // Adicionar novo usuário
+// Função para adicionar/editar usuário (com Firebase)
+async function saveUser(user) {
+    if (!user.id) {
         user.id = 'user_' + Date.now();
+    }
+    
+    // Se password foi alterado, criptografar
+    if (user.password && user.password !== '***PRESERVED***') {
         user.password = btoa(user.password);
+    }
+    
+    // Salvar no Firebase
+    if (typeof db !== 'undefined') {
+        try {
+            const userData = { ...user };
+            delete userData.id;
+            await db.collection('users').doc(user.id).set(userData);
+            return user;
+        } catch (e) {
+            console.log('Firebase falhou, usando localStorage', e);
+        }
+    }
+    
+    // Fallback: localStorage
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const index = users.findIndex(u => u.id === user.id);
+    
+    if (index !== -1) {
+        const existingUser = users[index];
+        user.password = user.password || existingUser.password;
+        users[index] = user;
+    } else {
+        if (!user.password) user.password = btoa('123456'); // senha padrão
         users.push(user);
     }
     
