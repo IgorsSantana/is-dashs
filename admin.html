@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo</title>
+    <link rel="stylesheet" href="styles/dashboard.css">
+    <link rel="stylesheet" href="styles/admin.css">
+    <style>
+        /* fallback mínimo caso admin.css não carregue */
+        .admin-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    </style>
+    <script>
+        // Redirecionar se não autenticado
+        (function(){
+            try {
+                const s = JSON.parse(localStorage.getItem('session')||'null');
+                if (!s || (!s.isAdmin && !s.isAdminTI)) { window.location.href = 'index.html'; }
+            } catch { window.location.href = 'index.html'; }
+        })();
+    </script>
+    <script src="js/data.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script defer src="js/admin.js"></script>
+</head>
+<body>
+    <div class="admin-header">
+        <div class="admin-header-left">
+            <h1>Painel Administrativo</h1>
+            <span id="adminBadge" class="badge"></span>
+        </div>
+        <div class="admin-header-right">
+            <a href="dashboard.html" class="btn-secondary">← Voltar ao Dashboard</a>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <div class="admin-tabs">
+            <button class="tab-btn active" data-tab="reports">Relatórios</button>
+            <button class="tab-btn" data-tab="users">Usuários</button>
+            <button class="tab-btn" data-tab="companies" id="companiesTab" style="display:none;">Empresas</button>
+        </div>
+
+        <div id="tabReports" class="tab-content active">
+            <div class="admin-actions">
+                <button id="addReportBtn" class="btn-primary">+ Adicionar Relatório</button>
+            </div>
+            <div id="reportsList" class="admin-list"></div>
+        </div>
+
+        <div id="tabUsers" class="tab-content">
+            <div class="admin-actions">
+                <button id="addUserBtn" class="btn-primary">+ Adicionar Usuário</button>
+                <button id="showPasswordsBtn" class="btn-primary" style="display:none;">👁️ Mostrar Senhas</button>
+            </div>
+            <div id="usersList" class="admin-list"></div>
+        </div>
+
+        <div id="tabCompanies" class="tab-content">
+            <div class="admin-actions">
+                <button id="addCompanyBtn" class="btn-primary">+ Adicionar Empresa</button>
+            </div>
+            <div id="companiesList" class="admin-list"></div>
+        </div>
+    </div>
+
+    <!-- Modais reutilizados -->
+    <div id="reportFormModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 id="reportFormTitle">Adicionar Relatório</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="reportForm">
+                    <input type="hidden" id="reportFormId">
+                    <div class="form-group">
+                        <label for="reportFormName">Nome do Relatório</label>
+                        <input type="text" id="reportFormName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reportFormUrl">URL do Power BI</label>
+                        <textarea id="reportFormUrl" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="reportFormIcon">Ícone (emoji)</label>
+                        <input type="text" id="reportFormIcon" maxlength="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Departamentos com Acesso</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" value="gerencia" class="department-checkbox"> Gerência</label>
+                            <label><input type="checkbox" value="financeiro" class="department-checkbox"> Financeiro</label>
+                            <label><input type="checkbox" value="vendas" class="department-checkbox"> Vendas</label>
+                            <label><input type="checkbox" value="compras" class="department-checkbox"> Compras</label>
+                            <label><input type="checkbox" value="rh" class="department-checkbox"> RH</label>
+                            <label><input type="checkbox" value="operacoes" class="department-checkbox"> Operações</label>
+                            <label><input type="checkbox" value="ti" class="department-checkbox"> TI</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            OU - Usuários Específicos 
+                            <span id="userFilterInfo" class="filter-info"></span>
+                        </label>
+                        <div id="specificUsersList" class="checkbox-group"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeReportForm()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="userFormModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 id="userFormTitle">Adicionar Usuário</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userFormId">
+                    <div class="form-group">
+                        <label for="userFormUsername">Usuário</label>
+                        <input type="text" id="userFormUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userFormPassword">Senha</label>
+                        <input type="password" id="userFormPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userFormCompany">Empresa/Loja</label>
+                        <select id="userFormCompany" required></select>
+                    </div>
+                    <div class="form-group" id="isAdminTIField" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="userFormIsAdminTI"> 
+                            Admin TI (acesso total + ver senhas + gerenciar empresas)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="userFormDepartment">Departamento</label>
+                        <select id="userFormDepartment" required>
+                            <option value="financeiro">Financeiro</option>
+                            <option value="vendas">Vendas</option>
+                            <option value="compras">Compras</option>
+                            <option value="rh">Recursos Humanos</option>
+                            <option value="operacoes">Operações</option>
+                            <option value="gerencia">Gerência</option>
+                            <option value="ti">TI</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeUserForm()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="companyFormModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 id="companyFormTitle">Adicionar Empresa</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="companyForm">
+                    <input type="hidden" id="companyFormId">
+                    <div class="form-group">
+                        <label for="companyFormName">Nome da Empresa</label>
+                        <input type="text" id="companyFormName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="companyFormCode">Código (interno)</label>
+                        <input type="text" id="companyFormCode" required placeholder="ex: loja-04">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="closeCompanyForm()">Cancelar</button>
+                        <button type="submit" class="btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
+

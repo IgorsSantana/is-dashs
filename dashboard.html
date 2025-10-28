@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Relatórios - Dashboard</title>
+    <link rel="stylesheet" href="styles/dashboard.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Central de Relatórios</h2>
+                <div class="user-info">
+                    <span id="userName" class="user-name"></span>
+                    <span id="companyInfo" class="company-info"></span>
+                    <span id="userRole" class="user-role"></span>
+                </div>
+            </div>
+            
+            <!-- Power BI Login Button -->
+            <div class="powerbi-login-toggle">
+                <button id="powerbiLoginBtn" class="btn-powerbi-login">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21.05 18.29l-3.22 1.27c-.7.3-1.47.03-1.9-.64a1.46 1.46 0 0 1-.26-.71.5.5 0 0 0-.05-.16 1.18 1.18 0 0 0-.08-.28l-.11-.26a.92.92 0 0 0-.45-.39.93.93 0 0 0-.4-.11l-.13.02a2 2 0 0 0-.78.31l-1.34 1.08a.95.95 0 0 1-1.34-.2L3.97 6.42a.95.95 0 0 1 .21-1.36l.51-.41a1.05 1.05 0 0 0 .32-.43 1 1 0 0 0 .02-.37 1.27 1.27 0 0 0-.07-.25 1.23 1.23 0 0 0-.15-.23L4.44 3.16a.94.94 0 0 0-1.1-.16A1 1 0 0 0 3 4a2.5 2.5 0 0 0 .49 1.4l3.29 4.09c.08.1.15.2.21.31l.17.23c.31.49.77.8 1.3.89l2.15.31c.12.02.24.02.36 0h.12c.24 0 .48-.08.67-.21l8.97-5.83c.42-.27.96-.32 1.42-.13l.13.05c.43.18.75.55.89.99l1.14 3.64c.13.3.08.64-.13.87L21.05 18.3z"/>
+                    </svg>
+                    Login Power BI
+                </button>
+            </div>
+            
+            <!-- Admin Panel Button -->
+            <div id="adminPanelBtn" class="admin-panel-toggle" style="display: none;">
+                <button class="btn-admin-toggle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Painel Admin
+                </button>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul id="reportList" class="report-list">
+                    <!-- Relatórios serão inseridos dinamicamente via JavaScript -->
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn-logout">Sair</button>
+            </div>
+        </aside>
+
+        <!-- Admin Modal -->
+        <div id="adminModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Painel Administrativo</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="admin-tabs">
+                        <button class="tab-btn active" data-tab="reports">Relatórios</button>
+                        <button class="tab-btn" data-tab="users">Usuários</button>
+                        <button class="tab-btn" data-tab="companies" id="companiesTab" style="display: none;">Empresas</button>
+                    </div>
+                    
+                    <!-- Tab Relatórios -->
+                    <div id="tabReports" class="tab-content active">
+                        <div class="admin-actions">
+                            <button id="addReportBtn" class="btn-primary">+ Adicionar Relatório</button>
+                        </div>
+                        <div id="reportsList" class="admin-list"></div>
+                    </div>
+                    
+                    <!-- Tab Usuários -->
+                    <div id="tabUsers" class="tab-content">
+                        <div class="admin-actions">
+                            <button id="addUserBtn" class="btn-primary">+ Adicionar Usuário</button>
+                            <button id="showPasswordsBtn" class="btn-primary" style="display: none;">👁️ Mostrar Senhas</button>
+                        </div>
+                        <div id="usersList" class="admin-list"></div>
+                    </div>
+                    
+                    <!-- Tab Empresas -->
+                    <div id="tabCompanies" class="tab-content">
+                        <div class="admin-actions">
+                            <button id="addCompanyBtn" class="btn-primary">+ Adicionar Empresa</button>
+                        </div>
+                        <div id="companiesList" class="admin-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Form Modal -->
+        <div id="reportFormModal" class="modal">
+            <div class="modal-content modal-small">
+                <div class="modal-header">
+                    <h2 id="reportFormTitle">Adicionar Relatório</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="reportForm">
+                        <input type="hidden" id="reportFormId">
+                        <div class="form-group">
+                            <label for="reportFormName">Nome do Relatório</label>
+                            <input type="text" id="reportFormName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reportFormUrl">URL do Power BI</label>
+                            <textarea id="reportFormUrl" rows="3" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="reportFormIcon">Ícone (emoji)</label>
+                            <input type="text" id="reportFormIcon" maxlength="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Departamentos com Acesso</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" value="gerencia" class="department-checkbox"> Gerência</label>
+                                <label><input type="checkbox" value="financeiro" class="department-checkbox"> Financeiro</label>
+                                <label><input type="checkbox" value="vendas" class="department-checkbox"> Vendas</label>
+                                <label><input type="checkbox" value="compras" class="department-checkbox"> Compras</label>
+                                <label><input type="checkbox" value="rh" class="department-checkbox"> RH</label>
+                                <label><input type="checkbox" value="operacoes" class="department-checkbox"> Operações</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                OU - Usuários Específicos 
+                                <span id="userFilterInfo" class="filter-info"></span>
+                            </label>
+                            <div id="specificUsersList" class="checkbox-group">
+                                <!-- Usuários serão preenchidos dinamicamente -->
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="closeReportForm()">Cancelar</button>
+                            <button type="submit" class="btn-primary">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Form Modal -->
+        <div id="companyFormModal" class="modal">
+            <div class="modal-content modal-small">
+                <div class="modal-header">
+                    <h2 id="companyFormTitle">Adicionar Empresa</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="companyForm">
+                        <input type="hidden" id="companyFormId">
+                        <div class="form-group">
+                            <label for="companyFormName">Nome da Empresa</label>
+                            <input type="text" id="companyFormName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="companyFormCode">Código (interno)</label>
+                            <input type="text" id="companyFormCode" required placeholder="ex: loja-04">
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="closeCompanyForm()">Cancelar</button>
+                            <button type="submit" class="btn-primary">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Form Modal -->
+        <div id="userFormModal" class="modal">
+            <div class="modal-content modal-small">
+                <div class="modal-header">
+                    <h2 id="userFormTitle">Adicionar Usuário</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <input type="hidden" id="userFormId">
+                        <div class="form-group">
+                            <label for="userFormUsername">Usuário</label>
+                            <input type="text" id="userFormUsername" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="userFormPassword">Senha</label>
+                            <input type="password" id="userFormPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="userFormCompany">Empresa/Loja</label>
+                            <select id="userFormCompany" required>
+                                <option value="matriz">Matriz</option>
+                                <option value="loja-01">Loja 01</option>
+                                <option value="loja-02">Loja 02</option>
+                                <option value="loja-03">Loja 03</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="isAdminTIField" style="display: none;">
+                            <label>
+                                <input type="checkbox" id="userFormIsAdminTI"> 
+                                Admin TI (acesso total + ver senhas + gerenciar empresas)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="userFormDepartment">Departamento</label>
+                            <select id="userFormDepartment" required>
+                                <option value="financeiro">Financeiro</option>
+                                <option value="vendas">Vendas</option>
+                                <option value="compras">Compras</option>
+                                <option value="rh">Recursos Humanos</option>
+                                <option value="operacoes">Operações</option>
+                                <option value="gerencia">Gerência</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="userFormIsAdmin"> 
+                                Administrador (pode gerenciar usuários e relatórios)
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" onclick="closeUserForm()">Cancelar</button>
+                            <button type="submit" class="btn-primary">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1 id="selectedReportTitle">Selecione um relatório</h1>
+            </div>
+            
+            <div class="content-body">
+                <div id="reportContainer" class="report-container">
+                    <div class="welcome-message">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <line x1="9" y1="3" x2="9" y2="21"/>
+                            <line x1="9" y1="9" x2="21" y2="9"/>
+                        </svg>
+                        <h2>Bem-vindo ao Central de Relatórios</h2>
+                        <p>Selecione um relatório na barra lateral para visualizar</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
+
