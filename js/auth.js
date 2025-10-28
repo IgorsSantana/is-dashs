@@ -158,6 +158,20 @@ function getCompanies() {
 // Função para salvar empresas
 function saveCompanies(companies) {
     localStorage.setItem('companies', JSON.stringify(companies));
+    
+    // Sincronizar com Firebase
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const batch = db.batch();
+            companies.forEach(company => {
+                const companyRef = db.collection('companies').doc(company.id);
+                batch.set(companyRef, { name: company.name, code: company.code });
+            });
+            batch.commit().catch(e => console.log('Firebase companies sync falhou:', e));
+        } catch (e) {
+            console.log('Firebase companies não disponível');
+        }
+    }
 }
 
 // Função para adicionar/editar empresa
@@ -177,6 +191,15 @@ function saveCompany(company) {
     }
     
     saveCompanies(companies);
+    
+    // Sincronizar Firebase
+    if (typeof db !== 'undefined' && db) {
+        db.collection('companies').doc(company.id).set({
+            name: company.name,
+            code: company.code
+        }).catch(e => console.log('Firebase company save falhou'));
+    }
+    
     return company;
 }
 
@@ -185,6 +208,11 @@ function deleteCompany(companyId) {
     const companies = getCompanies();
     const filteredCompanies = companies.filter(c => c.id !== companyId);
     saveCompanies(filteredCompanies);
+    
+    // Deletar do Firebase
+    if (typeof db !== 'undefined' && db) {
+        db.collection('companies').doc(companyId).delete().catch(e => console.log('Firebase company delete falhou'));
+    }
 }
 
 // Função para ver senha (apenas Admin TI)
@@ -263,6 +291,20 @@ function getReports() {
 // Função para salvar relatórios
 function saveReports(reports) {
     localStorage.setItem('reports', JSON.stringify(reports));
+    
+    // Sincronizar com Firebase
+    if (typeof db !== 'undefined' && db) {
+        try {
+            const batch = db.batch();
+            Object.entries(reports).forEach(([id, report]) => {
+                const reportRef = db.collection('reports').doc(id);
+                batch.set(reportRef, report);
+            });
+            batch.commit().catch(e => console.log('Firebase reports sync falhou:', e));
+        } catch (e) {
+            console.log('Firebase reports não disponível');
+        }
+    }
 }
 
 // Função para adicionar/editar relatório
@@ -281,6 +323,7 @@ function saveReport(report) {
     } else {
         // Adicionar novo relatório
         const id = 'report_' + Date.now();
+        report.id = id;
         reports[id] = {
             name: report.name,
             url: report.url,
@@ -291,6 +334,13 @@ function saveReport(report) {
     }
     
     saveReports(reports);
+    
+    // Sincronizar Firebase
+    if (typeof db !== 'undefined' && db) {
+        const reportId = report.id || Object.keys(reports)[Object.keys(reports).length - 1];
+        db.collection('reports').doc(reportId).set(reports[reportId]).catch(e => console.log('Firebase report save falhou'));
+    }
+    
     return reports;
 }
 
@@ -299,5 +349,10 @@ function deleteReport(reportId) {
     const reports = getReports();
     delete reports[reportId];
     saveReports(reports);
+    
+    // Deletar do Firebase
+    if (typeof db !== 'undefined' && db) {
+        db.collection('reports').doc(reportId).delete().catch(e => console.log('Firebase report delete falhou'));
+    }
 }
 
