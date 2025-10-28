@@ -145,7 +145,9 @@ function openReportForm(reportId = null) {
 }
 
 function loadUsersForReportForm() {
-    const users = getUsers();
+    console.log('👥 Carregando usuários para formulário de relatório');
+    const users = getUsersSync();
+    console.log('✅ Usuários carregados:', users.length);
     const specificUsersList = document.getElementById('specificUsersList');
     specificUsersList.innerHTML = users.map(user => `
         <label class="user-checkbox-label">
@@ -156,7 +158,7 @@ function loadUsersForReportForm() {
 
 function filterUsersByDepartments() {
     const selectedDepartments = Array.from(document.querySelectorAll('.department-checkbox:checked')).map(cb => cb.value);
-    const users = getUsers();
+    const users = getUsersSync();
     const specificUsersList = document.getElementById('specificUsersList');
     const filterInfo = document.getElementById('userFilterInfo');
     let filteredUsers;
@@ -223,7 +225,7 @@ function openUserForm(userId = null) {
     document.getElementById('userFormId').value = userId || '';
     populateCompaniesSelect();
     if (userId) {
-        const users = getUsers();
+        const users = getUsersSync();
         const user = users.find(u => u.id === userId);
         if (user) {
             document.getElementById('userFormUsername').value = user.username;
@@ -260,6 +262,8 @@ function saveUserFromForm() {
 function editUser(userId) { openUserForm(userId); }
 function deleteUserConfirm(userId) { if (userId === adminSession.id) { alert('Você não pode excluir seu próprio usuário!'); return; } if (confirm('Excluir usuário?')) { deleteUser(userId); loadUsersList(); alert('Usuário excluído!'); } }
 function closeUserForm() { document.getElementById('userFormModal').classList.remove('active'); }
+
+function editCompany(companyId) { openCompanyForm(companyId); }
 
 // Empresas
 function loadCompaniesList() {
