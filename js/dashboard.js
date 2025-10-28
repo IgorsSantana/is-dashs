@@ -124,26 +124,51 @@ function setupEventListeners() {
 
 // Setup do painel admin
 function setupAdminPanel() {
+    console.log('🔧 setupAdminPanel iniciado');
+    console.log('📊 currentSession:', currentSession);
+    
     // Botão Power BI Login
     const powerbiLoginBtn = document.getElementById('powerbiLoginBtn');
-    powerbiLoginBtn.addEventListener('click', () => {
-        // Abrir Power BI em nova aba para login
-        window.open('https://app.powerbi.com', '_blank');
-        
-        // Mostrar mensagem
-        setTimeout(() => {
-            alert('Faça login no Power BI que abriu em nova aba. Depois volte aqui e os relatórios funcionarão!');
-        }, 500);
-    });
+    if (powerbiLoginBtn) {
+        powerbiLoginBtn.addEventListener('click', () => {
+            console.log('🔵 Power BI Login clicado');
+            // Abrir Power BI em nova aba para login
+            window.open('https://app.powerbi.com', '_blank');
+            
+            // Mostrar mensagem
+            setTimeout(() => {
+                alert('Faça login no Power BI que abriu em nova aba. Depois volte aqui e os relatórios funcionarão!');
+            }, 500);
+        });
+    } else {
+        console.warn('⚠️ powerbiLoginBtn não encontrado');
+    }
     
-    if (!currentSession || !currentSession.isAdmin) return;
+    if (!currentSession) {
+        console.warn('⚠️ currentSession é null/undefined');
+        return;
+    }
+    
+    if (!currentSession.isAdmin && !currentSession.isAdminTI) {
+        console.warn('⚠️ Usuário não é admin. isAdmin:', currentSession.isAdmin, 'isAdminTI:', currentSession.isAdminTI);
+        return;
+    }
+    
+    console.log('✅ Usuário é admin, configurando botão admin');
     
     // Botão admin panel -> abre página admin
     const adminPanelBtn = document.getElementById('adminPanelBtn');
+    console.log('🔘 adminPanelBtn encontrado:', !!adminPanelBtn);
+    
     if (adminPanelBtn) {
+        console.log('✅ Adicionando event listener ao botão admin');
         adminPanelBtn.addEventListener('click', () => {
+            console.log('🔴 Botão Painel Admin clicado!');
+            console.log('📍 Redirecionando para admin.html');
             window.location.href = 'admin.html';
         });
+    } else {
+        console.error('❌ adminPanelBtn não encontrado no DOM');
     }
     
     // Fechar modais
