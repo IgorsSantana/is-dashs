@@ -160,6 +160,53 @@ function getDecryptedPassword(user) {
     }
 }
 
+// Função para exportar todos os dados
+function exportData() {
+    const data = {
+        users: getUsers(),
+        reports: getReports(),
+        companies: getCompanies(),
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard-backup-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Função para importar dados
+function importData(file) {
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // Validar estrutura
+            if (!data.users || !data.reports) {
+                throw new Error('Formato inválido');
+            }
+            
+            // Salvar dados
+            if (data.users) localStorage.setItem('users', JSON.stringify(data.users));
+            if (data.reports) localStorage.setItem('reports', JSON.stringify(data.reports));
+            if (data.companies) localStorage.setItem('companies', JSON.stringify(data.companies));
+            
+            alert('Dados importados com sucesso! Recarregue a página.');
+            window.location.reload();
+        } catch (error) {
+            alert('Erro ao importar dados: ' + error.message);
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
 // Função para obter relatórios
 function getReports() {
     const reports = localStorage.getItem('reports');

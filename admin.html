@@ -30,9 +30,12 @@
             <h1>Painel Administrativo</h1>
             <span id="adminBadge" class="badge"></span>
         </div>
-        <div class="admin-header-right">
-            <a href="dashboard.html" class="btn-secondary">← Voltar ao Dashboard</a>
-        </div>
+            <div class="admin-header-right">
+                <button onclick="exportData()" class="btn-secondary" style="margin-right: 8px;">📥 Exportar Dados</button>
+                <label for="importFile" class="btn-secondary" style="margin-right: 8px;">📤 Importar Dados</label>
+                <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(this.files[0])">
+                <a href="dashboard.html" class="btn-secondary">← Voltar</a>
+            </div>
     </div>
 
     <div class="admin-container">
