@@ -72,24 +72,36 @@ function validateLogin(username, password) {
     return { success: true, user: user };
 }
 
-// Função para obter usuários (com fallback para localStorage)
-async function getUsers() {
-    // Tentar Firebase primeiro
-    if (typeof db !== 'undefined') {
-        try {
-            const snapshot = await db.collection('users').get();
-            return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        } catch (e) {
-            console.log('Firebase não disponível, usando localStorage');
-        }
-    }
-    
-    // Fallback para localStorage
+// Função para obter usuários
+function getUsers() {
+    // Usar localStorage por enquanto
+    // Firebase pode ser adicionado depois com cache sincronizado
     return JSON.parse(localStorage.getItem('users') || '[]');
 }
 
-// Função para adicionar/editar usuário (com Firebase)
-async function saveUser(user) {
+// Função para salvar também no Firebase (assíncrono)
+async function syncUsersToFirebase(users) {
+    if (typeof db !== 'undefined') {
+        try {
+            // Criar batch para salvar tudo de uma vez
+            const batch = db.batch();
+            users.forEach(user => {
+                const userRef = db.collection('users').doc(user.id);
+                const { id, ...userData } = user;
+                batch.set(userRef, userData);
+            });
+            await batch.commit();
+            console.log('✅ Dados sincronizados com Firebase');
+        } catch (e) {
+            console.log('⚠️ Firebase não disponível:', e.message);
+        }
+    }
+}
+
+// Função para adicionar/editar usuário
+function saveUser(user) {
+    const users = getUsers();
+    
     if (!user.id) {
         user.id = 'user_' + Date.now();
     }
@@ -99,32 +111,24 @@ async function saveUser(user) {
         user.password = btoa(user.password);
     }
     
-    // Salvar no Firebase
-    if (typeof db !== 'undefined') {
-        try {
-            const userData = { ...user };
-            delete userData.id;
-            await db.collection('users').doc(user.id).set(userData);
-            return user;
-        } catch (e) {
-            console.log('Firebase falhou, usando localStorage', e);
-        }
-    }
-    
-    // Fallback: localStorage
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
     const index = users.findIndex(u => u.id === user.id);
     
     if (index !== -1) {
+        // Editar existente
         const existingUser = users[index];
         user.password = user.password || existingUser.password;
         users[index] = user;
     } else {
-        if (!user.password) user.password = btoa('123456'); // senha padrão
+        // Adicionar novo
+        if (!user.password) user.password = btoa('123456');
         users.push(user);
     }
     
     localStorage.setItem('users', JSON.stringify(users));
+    
+    // Sincronizar com Firebase em background
+    syncUsersToFirebase(users);
+    
     return user;
 }
 
@@ -133,6 +137,14 @@ function deleteUser(userId) {
     const users = getUsers();
     const filteredUsers = users.filter(u => u.id !== userId);
     localStorage.setItem('users', JSON.stringify(filteredUsers));
+    
+    // Sincronizar Firebase em background
+    syncUsersToFirebase(filteredUsers);
+    
+    // Tentar deletar do Firebase também
+    if (typeof db !== 'undefined') {
+        db.collection('users').doc(userId).delete().catch(e => console.log('Firebase delete falhou'));
+    }
 }
 
 // Função para obter empresas
