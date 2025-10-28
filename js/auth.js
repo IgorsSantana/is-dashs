@@ -59,6 +59,7 @@ function validateLogin(username, password) {
     console.log('🔐 Validando login para:', username);
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     console.log('👥 Usuários disponíveis:', users.length);
+    
     const encryptedPassword = btoa(password);
     
     const user = users.find(u => u.username === username);
@@ -68,8 +69,29 @@ function validateLogin(username, password) {
         return { success: false, message: 'Usuário não encontrado' };
     }
     
-    console.log('🔑 Senha correta?', user.password === encryptedPassword, user.password, 'vs', encryptedPassword);
-    if (user.password !== encryptedPassword) {
+    // Verificar senha: pode estar em Base64 ou texto plano
+    let passwordMatch = false;
+    
+    if (user.password === encryptedPassword || user.password === password) {
+        passwordMatch = true;
+    } else {
+        // Tentar descriptografar se estiver em Base64
+        try {
+            if (atob(user.password) === password) {
+                passwordMatch = true;
+            }
+        } catch (e) {
+            // Senha não está em Base64 válido
+        }
+    }
+    
+    console.log('🔑 Senhas comparadas:', {
+        stored: user.password,
+        encrypted: encryptedPassword,
+        passwordMatch: passwordMatch
+    });
+    
+    if (!passwordMatch) {
         console.log('❌ Senha incorreta');
         return { success: false, message: 'Senha incorreta' };
     }
