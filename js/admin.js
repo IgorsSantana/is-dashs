@@ -16,11 +16,14 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('companiesTab').style.display = 'inline-block';
     }
 
-    setupTabs();
-    setupActions();
-    loadReportsList();
-    loadUsersList();
-    loadCompaniesList();
+    // Aguardar sync carregar dados do Firebase
+    setTimeout(() => {
+        setupTabs();
+        setupActions();
+        loadReportsList();
+        loadUsersList();
+        loadCompaniesList();
+    }, 1500);
 });
 
 function setupTabs() {

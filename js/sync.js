@@ -40,10 +40,7 @@ async function initializeFirebaseData() {
         
         console.log('🎉 Sincronização concluída!');
         
-        // Recarregar página para aplicar mudanças
-        if (window.location.pathname.includes('dashboard.html')) {
-            window.location.reload();
-        }
+        // Não recarregar automaticamente - deixar página funcionar normalmente
     } catch (error) {
         console.error('❌ Erro ao carregar dados do Firebase:', error);
     }

@@ -6,10 +6,14 @@ let availableReports = [];
 // Inicializar dashboard
 window.addEventListener('DOMContentLoaded', () => {
     checkAuth();
-    loadSession();
-    renderSidebar();
-    setupEventListeners();
-    setupAdminPanel();
+    
+    // Aguardar sync carregar dados, depois inicializar
+    setTimeout(() => {
+        loadSession();
+        renderSidebar();
+        setupEventListeners();
+        setupAdminPanel();
+    }, 1500); // Aguardar Firebase carregar
 });
 
 // Verificar autenticação
