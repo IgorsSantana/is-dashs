@@ -81,20 +81,23 @@ function getUsers() {
 
 // Função para salvar também no Firebase (assíncrono)
 async function syncUsersToFirebase(users) {
-    if (typeof db !== 'undefined') {
-        try {
-            // Criar batch para salvar tudo de uma vez
-            const batch = db.batch();
-            users.forEach(user => {
-                const userRef = db.collection('users').doc(user.id);
-                const { id, ...userData } = user;
-                batch.set(userRef, userData);
-            });
-            await batch.commit();
-            console.log('✅ Dados sincronizados com Firebase');
-        } catch (e) {
-            console.log('⚠️ Firebase não disponível:', e.message);
-        }
+    // Verificar se Firebase está disponível
+    if (typeof db === 'undefined' || !db) {
+        return;
+    }
+    
+    try {
+        // Criar batch para salvar tudo de uma vez
+        const batch = db.batch();
+        users.forEach(user => {
+            const userRef = db.collection('users').doc(user.id);
+            const { id, ...userData } = user;
+            batch.set(userRef, userData);
+        });
+        await batch.commit();
+        console.log('✅ Dados sincronizados com Firebase');
+    } catch (e) {
+        console.log('⚠️ Firebase não disponível:', e.message);
     }
 }
 
@@ -142,7 +145,7 @@ function deleteUser(userId) {
     syncUsersToFirebase(filteredUsers);
     
     // Tentar deletar do Firebase também
-    if (typeof db !== 'undefined') {
+    if (typeof db !== 'undefined' && db) {
         db.collection('users').doc(userId).delete().catch(e => console.log('Firebase delete falhou'));
     }
 }
