@@ -140,9 +140,11 @@ function setupAdminPanel() {
     
     // Botão admin panel -> abre página admin
     const adminPanelBtn = document.getElementById('adminPanelBtn');
-    adminPanelBtn.addEventListener('click', () => {
-        window.location.href = 'admin.html';
-    });
+    if (adminPanelBtn) {
+        adminPanelBtn.addEventListener('click', () => {
+            window.location.href = 'admin.html';
+        });
+    }
     
     // Fechar modais
     document.querySelectorAll('.modal-close, .modal').forEach(el => {
