@@ -141,6 +141,19 @@ function setupEventListeners() {
             window.location.href = 'index.html';
         }
     });
+
+    // Botão de tela cheia
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', () => {
+            const iframe = document.querySelector('#reportContainer iframe');
+            const target = iframe || document.getElementById('reportContainer');
+            if (!target) return;
+            if (target.requestFullscreen) target.requestFullscreen();
+            else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+            else if (target.msRequestFullscreen) target.msRequestFullscreen();
+        });
+    }
 }
 
 // Setup do painel admin

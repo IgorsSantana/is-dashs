@@ -136,12 +136,31 @@ body {
     padding: 20px 30px;
     border-bottom: 1px solid #e0e0e0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .content-header h1 {
     font-size: 24px;
     font-weight: 600;
     color: #2d3748;
+}
+
+.btn-fullscreen {
+    padding: 8px 12px;
+    background: #f7fafc;
+    color: #2d3748;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-fullscreen:hover {
+    background: #edf2f7;
 }
 
 .content-body {
