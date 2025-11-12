@@ -424,27 +424,27 @@ function saveReports(reports) {
 // Função para adicionar/editar relatório
 function saveReport(report) {
     const reports = getReportsSync();
+    const integrationType = report.integrationType || 'url';
+    const embedConfig = integrationType === 'embedded' ? (report.embed || null) : null;
+    
+    const normalizedReport = {
+        name: report.name,
+        url: integrationType === 'url' ? report.url : null,
+        icon: report.icon || '📊',
+        integrationType,
+        embed: embedConfig,
+        departments: report.departments,
+        specificUsers: report.specificUsers
+    };
     
     if (report.id) {
         // Editar relatório existente
-        reports[report.id] = {
-            name: report.name,
-            url: report.url,
-            icon: report.icon || '📊',
-            departments: report.departments,
-            specificUsers: report.specificUsers
-        };
+        reports[report.id] = normalizedReport;
     } else {
         // Adicionar novo relatório
         const id = 'report_' + Date.now();
         report.id = id;
-        reports[id] = {
-            name: report.name,
-            url: report.url,
-            icon: report.icon || '📊',
-            departments: report.departments,
-            specificUsers: report.specificUsers
-        };
+        reports[id] = normalizedReport;
     }
     
     saveReports(reports);

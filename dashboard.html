@@ -108,8 +108,25 @@
                             <input type="text" id="reportFormName" required>
                         </div>
                         <div class="form-group">
+                            <label for="reportFormIntegration">Modo do Relatório</label>
+                            <select id="reportFormIntegration">
+                                <option value="url">Link direto / iframe</option>
+                                <option value="embedded">Power BI Embedded (token)</option>
+                            </select>
+                            <small class="form-hint">Selecione "Embedded" se o token for fornecido pelo backend.</small>
+                        </div>
+                        <div class="form-group" id="reportFormUrlGroup">
                             <label for="reportFormUrl">URL do Power BI</label>
-                            <textarea id="reportFormUrl" rows="3" required></textarea>
+                            <textarea id="reportFormUrl" rows="3"></textarea>
+                        </div>
+                        <div class="form-group" id="reportFormEmbeddedGroup" style="display: none;">
+                            <label>Configuração Power BI Embedded</label>
+                            <div class="embedded-fields">
+                                <input type="text" id="reportFormWorkspaceId" placeholder="Workspace ID (guid)">
+                                <input type="text" id="reportFormReportId" placeholder="Report ID (guid)">
+                                <input type="text" id="reportFormDatasetId" placeholder="Dataset ID (guid)">
+                            </div>
+                            <small class="form-hint">Os IDs podem ser copiados do portal do Power BI. Dataset é opcional para relatórios do DirectQuery.</small>
                         </div>
                         <div class="form-group">
                             <label for="reportFormIcon">Ícone (emoji)</label>
@@ -266,6 +283,8 @@
     <script src="js/config.js"></script>
     <script src="js/sync.js"></script>
     <script src="js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/powerbi-client@2.23.0/dist/powerbi.min.js"></script>
+    <script src="js/powerbi-embedded.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
 </html>

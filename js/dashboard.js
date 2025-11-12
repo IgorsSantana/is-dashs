@@ -107,7 +107,7 @@ function renderSidebar() {
     
     // Se houver relatórios, carregar o primeiro
     if (availableReports.length > 0 && availableReports[0]) {
-        loadReport(availableReports[0].id);
+        loadReport(availableReports[0].id).catch(err => console.error('Erro inicial ao carregar relatório:', err));
     }
 }
 
@@ -129,7 +129,7 @@ function setupEventListeners() {
             reportItem.classList.add('active');
             
             // Carregar relatório
-            loadReport(reportId);
+            loadReport(reportId).catch(err => console.error('Erro ao alternar relatório:', err));
         }
     });
     
@@ -237,6 +237,11 @@ function setupAdminPanel() {
         e.preventDefault();
         saveReportFromForm();
     });
+
+    const reportIntegrationSelect = document.getElementById('reportFormIntegration');
+    if (reportIntegrationSelect) {
+        reportIntegrationSelect.addEventListener('change', () => updateReportFormIntegration());
+    }
     
     // Form de usuário
     document.getElementById('userForm').addEventListener('submit', (e) => {
@@ -330,15 +335,40 @@ function openReportForm(reportId = null) {
     document.getElementById('reportForm').reset();
     document.getElementById('reportFormId').value = reportId || '';
     
+    const integrationSelect = document.getElementById('reportFormIntegration');
+    const urlField = document.getElementById('reportFormUrl');
+    const workspaceInput = document.getElementById('reportFormWorkspaceId');
+    const reportIdInput = document.getElementById('reportFormReportId');
+    const datasetInput = document.getElementById('reportFormDatasetId');
+    
+    if (urlField) urlField.value = '';
+    if (workspaceInput) workspaceInput.value = '';
+    if (reportIdInput) reportIdInput.value = '';
+    if (datasetInput) datasetInput.value = '';
+    
     // Preencher lista de usuários
     loadUsersForReportForm();
     
+    let integrationType = 'url';
+    
     if (reportId) {
-        const reports = getReports();
+        const reports = getReportsSync();
         const report = reports[reportId];
         if (report) {
             document.getElementById('reportFormName').value = report.name;
-            document.getElementById('reportFormUrl').value = report.url;
+            integrationType = getReportIntegrationType(report);
+            
+            if (integrationSelect) {
+                integrationSelect.value = integrationType;
+            }
+            
+            if (integrationType === 'embedded' && report.embed) {
+                if (workspaceInput) workspaceInput.value = report.embed.workspaceId || '';
+                if (reportIdInput) reportIdInput.value = report.embed.reportId || '';
+                if (datasetInput) datasetInput.value = report.embed.datasetId || '';
+            } else if (urlField) {
+                urlField.value = report.url || '';
+            }
             document.getElementById('reportFormIcon').value = report.icon || '📊';
             
             // Marcar departamentos
@@ -357,9 +387,62 @@ function openReportForm(reportId = null) {
                 });
             }
         }
+    } else if (integrationSelect) {
+        integrationSelect.value = integrationType;
     }
     
+    applyDefaultEmbedValues(integrationType);
+    updateReportFormIntegration(integrationType);
+    
     document.getElementById('reportFormModal').classList.add('active');
+}
+
+function updateReportFormIntegration(forcedType = null) {
+    const integrationSelect = document.getElementById('reportFormIntegration');
+    if (!integrationSelect) return;
+    
+    if (forcedType) {
+        integrationSelect.value = forcedType;
+    }
+    
+    const currentType = integrationSelect.value || 'url';
+    const urlGroup = document.getElementById('reportFormUrlGroup');
+    const embedGroup = document.getElementById('reportFormEmbeddedGroup');
+    
+    if (urlGroup) {
+        urlGroup.style.display = currentType === 'url' ? 'block' : 'none';
+    }
+    if (embedGroup) {
+        embedGroup.style.display = currentType === 'embedded' ? 'block' : 'none';
+    }
+
+    applyDefaultEmbedValues(currentType);
+}
+
+function applyDefaultEmbedValues(integrationType) {
+    const workspaceInput = document.getElementById('reportFormWorkspaceId');
+    const datasetInput = document.getElementById('reportFormDatasetId');
+    if (!workspaceInput || !datasetInput) return;
+
+    const settings = window.POWERBI_SETTINGS || {};
+
+    workspaceInput.placeholder = 'Workspace ID (guid)';
+    datasetInput.placeholder = 'Dataset ID (guid)';
+
+    if (integrationType === 'embedded') {
+        if (settings.defaultWorkspaceId) {
+            workspaceInput.placeholder = `Workspace ID (padrão: ${settings.defaultWorkspaceId})`;
+            if (!workspaceInput.value) {
+                workspaceInput.value = settings.defaultWorkspaceId;
+            }
+        }
+        if (settings.defaultDatasetId) {
+            datasetInput.placeholder = `Dataset ID (padrão: ${settings.defaultDatasetId})`;
+            if (!datasetInput.value) {
+                datasetInput.value = settings.defaultDatasetId;
+            }
+        }
+    }
 }
 
 // Configurar filtro de departamentos
@@ -432,6 +515,15 @@ function saveReportFromForm() {
     const reportId = document.getElementById('reportFormId').value;
     const departments = Array.from(document.querySelectorAll('.department-checkbox:checked')).map(cb => cb.value);
     const specificUsers = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
+    const integrationSelect = document.getElementById('reportFormIntegration');
+    const integrationType = integrationSelect ? integrationSelect.value : 'url';
+    const urlValue = (document.getElementById('reportFormUrl').value || '').trim();
+    const reportGuid = (document.getElementById('reportFormReportId').value || '').trim();
+    const settings = window.POWERBI_SETTINGS || {};
+    let workspaceId = (document.getElementById('reportFormWorkspaceId').value || '').trim();
+    let datasetId = (document.getElementById('reportFormDatasetId').value || '').trim();
+    const fallbackWorkspace = settings.defaultWorkspaceId || '';
+    const fallbackDataset = settings.defaultDatasetId || '';
     
     // Validar
     if (departments.length === 0 && specificUsers.length === 0) {
@@ -439,11 +531,43 @@ function saveReportFromForm() {
         return;
     }
     
+    if (integrationType === 'url') {
+        if (!urlValue) {
+            alert('Informe a URL do Power BI ou mude para o modo Embedded.');
+            return;
+        }
+    } else if (integrationType === 'embedded') {
+        if (!workspaceId && fallbackWorkspace) {
+            workspaceId = fallbackWorkspace;
+        }
+        if (!datasetId && fallbackDataset) {
+            datasetId = fallbackDataset;
+        }
+
+        if (!workspaceId || !reportGuid) {
+            alert('Informe Workspace ID e Report ID para o modo Embedded.');
+            return;
+        }
+    }
+    
+    let embedConfig = null;
+    if (integrationType === 'embedded') {
+        embedConfig = {
+            workspaceId,
+            reportId: reportGuid
+        };
+        if (datasetId) {
+            embedConfig.datasetId = datasetId;
+        }
+    }
+    
     const report = {
         id: reportId,
         name: document.getElementById('reportFormName').value,
-        url: document.getElementById('reportFormUrl').value,
+        url: integrationType === 'url' ? urlValue : null,
         icon: document.getElementById('reportFormIcon').value,
+        integrationType,
+        embed: embedConfig,
         departments: departments.length > 0 ? departments : null,
         specificUsers: specificUsers.length > 0 ? specificUsers : null
     };
@@ -653,7 +777,7 @@ function populateCompaniesSelect() {
 }
 
 // Carregar relatório
-function loadReport(reportId) {
+async function loadReport(reportId) {
     console.log('📄 Carregando relatório:', reportId);
     const reports = getReportsSync();
     const report = reports[reportId];
@@ -669,7 +793,34 @@ function loadReport(reportId) {
     
     // Renderizar container do relatório
     const container = document.getElementById('reportContainer');
-    
+    const integrationType = getReportIntegrationType(report);
+
+    try {
+        if (integrationType === 'embedded') {
+            await renderEmbeddedReport(report);
+        } else {
+            renderIframeReport(report);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao carregar relatório Power BI:', error);
+        if (!error.__handled) {
+            showReportError(container, error.message || 'Erro desconhecido ao carregar o relatório.');
+        }
+    }
+}
+
+function getReportIntegrationType(report) {
+    if (report.integrationType) {
+        return report.integrationType;
+    }
+    if (report.embed && (report.embed.workspaceId || report.embed.reportId)) {
+        return 'embedded';
+    }
+    return 'url';
+}
+
+function renderIframeReport(report) {
+    const container = document.getElementById('reportContainer');
     if (!report.url || report.url.includes('SEU_LINK_AQUI')) {
         container.innerHTML = `
             <div class="welcome-message">
@@ -685,26 +836,60 @@ function loadReport(reportId) {
                 </p>
             </div>
         `;
-    } else {
-        // Criar iframe para embed do Power BI
-        container.innerHTML = `
-            <div class="loading">Carregando relatório...</div>
-        `;
-        
-        // Simular carregamento
-        setTimeout(() => {
-            container.innerHTML = `
-                <div class="iframe-wrapper">
-                    <iframe 
-                        title="${report.name}" 
-                        src="${report.url}" 
-                        frameborder="0" 
-                        allowfullscreen="true">
-                    </iframe>
-                </div>
-            `;
-        }, 500);
+        return;
     }
+
+    container.innerHTML = `
+        <div class="iframe-wrapper">
+            <iframe 
+                title="${report.name}" 
+                src="${report.url}" 
+                frameborder="0" 
+                allowfullscreen="true">
+            </iframe>
+        </div>
+    `;
+}
+
+async function renderEmbeddedReport(report) {
+    const container = document.getElementById('reportContainer');
+    if (!window.PowerBIEmbedded) {
+        throw new Error('Biblioteca PowerBIEmbedded não disponível. Verifique o carregamento do arquivo js/powerbi-embedded.js.');
+    }
+
+    container.innerHTML = `
+        <div class="loading">Carregando relatório seguro...</div>
+    `;
+
+    try {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'powerbi-embed-wrapper';
+        wrapper.innerHTML = `<div class="powerbi-embed-container"></div>`;
+
+        container.innerHTML = '';
+        container.appendChild(wrapper);
+
+        const target = wrapper.querySelector('.powerbi-embed-container');
+        await window.PowerBIEmbedded.embedReport(target, report);
+    } catch (error) {
+        showReportError(container, error.message || 'Não foi possível carregar o relatório Embedded.');
+        error.__handled = true;
+        throw error;
+    }
+}
+
+function showReportError(container, message) {
+    container.innerHTML = `
+        <div class="welcome-message">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <circle cx="12" cy="16" r="1"></circle>
+            </svg>
+            <h2>Erro ao carregar relatório</h2>
+            <p>${message}</p>
+        </div>
+    `;
 }
 
 // Função para obter relatórios disponíveis

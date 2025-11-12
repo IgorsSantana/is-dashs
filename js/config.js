@@ -1,5 +1,18 @@
 // Configuração de relatórios, usuários e permissões
 
+const POWERBI_SETTINGS = (() => {
+    const globalSettings = window.POWERBI_SETTINGS || {};
+    const merged = {
+        embedTokenUrl: '/.netlify/functions/get_embed_config',
+        tokenMethod: 'GET',
+        defaultWorkspaceId: 'ee1efaf9-de0c-4aec-a5c4-493ec29a38d1',
+        defaultDatasetId: '',
+        ...globalSettings
+    };
+    window.POWERBI_SETTINGS = merged;
+    return merged;
+})();
+
 const CONFIG = {
     // URLs de exemplo dos relatórios Power BI
     // Substitua pelos seus links reais
